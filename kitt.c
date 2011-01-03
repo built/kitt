@@ -35,7 +35,9 @@
 #define FIRST_LED 0
 #define LAST_LED 7
 #define LED_COUNT (LAST_LED - FIRST_LED + 1)
-#define LED_DELAY 50
+// #define LED_DELAY 50
+
+int LED_DELAY = 50;
 
 int main(void)
 {
@@ -53,16 +55,35 @@ int main(void)
      {
          cmd = usb_serial_getchar();
 
-         if( is_valid(cmd) ) lastcmd = cmd;
+         if(is_valid_control_key(cmd))
+         {
+             if(cmd == '+') adjust_speed(-10); // Speed up == less time.
+             else if(cmd == '-') adjust_speed(10);
+         }
+
+         if( is_valid_cmd(cmd) ) 
+         {
+             lastcmd = cmd;
+         }
 
          if(lastcmd == 'k') knight_rider();
          else if(lastcmd == 's') step();
          else if(lastcmd == 'f') follow();
+         else if(lastcmd == '0') nop();
          else demo();
      }
  }
 }
 
+
+void adjust_speed(unsigned delta)
+{
+    unsigned new_speed = LED_DELAY + delta;
+    if( new_speed > 1 && new_speed < 1000 ) // Arbitrary boundaries for now.
+    {
+        LED_DELAY = new_speed;
+    }
+}
 
 void configure_LEDs()
 {
@@ -100,9 +121,19 @@ void configure_usb()
 
 
 
-int is_valid(int16_t cmd)
+int is_valid_cmd(int16_t cmd)
 {
-    return (cmd == 'k' || cmd == 's' || cmd == 'f' || cmd == 'd');
+    return (cmd == 'k' || cmd == 's' || cmd == 'f' || cmd == 'd' || cmd == '0');
+}
+
+int is_valid_control_key(int16_t cmd)
+{
+    return (cmd == '+' || cmd == '-');
+}
+
+void nop()
+{
+    return;
 }
 
 void knight_rider()
